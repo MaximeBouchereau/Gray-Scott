@@ -3,19 +3,18 @@ import scipy
 import importlib
 from scipy.sparse.linalg import spsolve
 from scipy.sparse import csr_matrix
+import os
 
 import ToolBox
 importlib.reload(ToolBox)
 
 # Hyperparameters
-params_0 = {'D_u':0.00002, 'D_v':0.00001, 'F':0.06, 'k':0.062, 'Lx':1, 'Ly':1, 'Jx':100, 'Jy':100, 'T':10000, 'N':10000, 'ID':"GN_0.2"} # Starter pack
-params_1 = {'D_u':0.005, 'D_v':0.0025, 'F':0.035, 'k':0.065, 'Lx':50, 'Ly':50, 'Jx':200, 'Jy':200, 'T':10000, 'N':10000, 'ID':"GN_0.1"} # Mitosis Turing
-params_2 = {'D_u':0.01, 'D_v':0.005, 'F':0.06, 'k':0.062, 'Lx':50, 'Ly':50, 'Jx':200, 'Jy':200, 'T':10000, 'N':10000, 'ID':"CS"} # Maze Turing
-params_3 = {'D_u':0.005, 'D_v':0.0025, 'F':0.025, 'k':0.06, 'Lx':50, 'Ly':50, 'Jx':200, 'Jy':200, 'T':10000, 'N':10000, 'ID':"RS"} # Mitosis Turing
-params_4 = {'D_u':0.005, 'D_v':0.0025, 'F':0.06, 'k':0.062, 'Lx':50, 'Ly':50, 'Jx':200, 'Jy':200, 'T':10000, 'N':10000, 'ID':"RS"} # Maze Turing
-params_5 = {'D_u':0.005, 'D_v':0.0025, 'F':0.045, 'k':0.065, 'Lx':50, 'Ly':50, 'Jx':200, 'Jy':200, 'T':10000, 'N':10000, 'ID':"RS"} # Bacteria
-
-params = params_2
+params_0 = {'name': "Starter_Pack", 'D_u':0.00002, 'D_v':0.00001, 'F':0.06, 'k':0.062, 'Lx':1, 'Ly':1, 'Jx':100, 'Jy':100, 'T':10000, 'N':10000, 'ID':"GN_0.2"} # Starter pack
+params_1 = {'name': "Mitosis_Turing_Random_Init", 'D_u':0.005, 'D_v':0.0025, 'F':0.035, 'k':0.065, 'Lx':50, 'Ly':50, 'Jx':200, 'Jy':200, 'T':10000, 'N':10000, 'ID':"GN_0.1"} # Mitosis Turing
+params_2 = {'name': "Maze_Turing_Square_Init", 'D_u':0.01, 'D_v':0.005, 'F':0.06, 'k':0.062, 'Lx':50, 'Ly':50, 'Jx':200, 'Jy':200, 'T':10000, 'N':10000, 'ID':"CS"} # Maze Turing
+params_3 = {'name': "Mitosis_Turing_Multiple_Squares_Init", 'D_u':0.005, 'D_v':0.0025, 'F':0.025, 'k':0.06, 'Lx':50, 'Ly':50, 'Jx':200, 'Jy':200, 'T':10000, 'N':10000, 'ID':"RS"} # Mitosis Turing
+params_4 = {'name': "Maze_Turing_Multiple_Squares_Init", 'D_u':0.005, 'D_v':0.0025, 'F':0.06, 'k':0.062, 'Lx':50, 'Ly':50, 'Jx':200, 'Jy':200, 'T':10000, 'N':10000, 'ID':"RS"} # Maze Turing
+params_5 = {'name': "Bacteria_Multiple_Squares_Init", 'D_u':0.005, 'D_v':0.0025, 'F':0.045, 'k':0.065, 'Lx':50, 'Ly':50, 'Jx':200, 'Jy':200, 'T':10000, 'N':10000, 'ID':"RS"} # Bacteria
 
 class Virus_Food_PDE:
     """Class for simulating Virus-Food-PDE."""
@@ -78,8 +77,24 @@ class Virus_Food_PDE:
             V[n + 1, :, :] = V[n, :, :] + params['D_v'] * Delta_t * ToolBox.Operators().Laplace_operator(V[n, :, :], Delta_x, Delta_y) + Delta_t * ToolBox.Vector_Field(params['k'], params['F']).f_2(U[n, :, :], V[n, :, :])
 
 
-
-        ToolBox.Print_Solution().print_PDE_Solution_2D(np.transpose(V, axes=(0, 2, 1)), params)
+        if save == True:
+            name_file = params['name'] + "_"
+            name_file += "Du=" + str(params['D_u']) + "_"
+            name_file += "Dv=" + str(params['D_v']) + "_"
+            name_file += "F=" + str(params['F']) + "_"
+            name_file += "k=" + str(params['k']) + "_"
+            name_file += "Lx=" + str(params['Lx']) + "_"
+            name_file += "Ly=" + str(params['Ly']) + "_"
+            name_file += "Jx=" + str(params['Jx']) + "_"
+            name_file += "Jy=" + str(params['Jy']) + "_"
+            name_file += "T=" + str(params['T']) + "_"
+            name_file += "N=" + str(params['N']) + "_"
+            name_file += "ID=" + str(params['ID'])
+            os.makedirs(name_file, exist_ok=False)
+            # np.save(name_file + "/V.npy", (V, params), allow_pickle=True)
+            np.savez(name_file + "/Integration.npz", solution = V, parameters = params)
+        if save == False:
+            ToolBox.Print_Solution().print_PDE_Solution_2D(np.transpose(V, axes=(0, 2, 1)), params)
         # ToolBox.Print_Solution().print_PDE_Solution_2D(np.concatenate((np.transpose(U, axes=(0, 2, 1)), np.transpose(V, axes=(0, 2, 1))), axis=2), params)
 
         return None

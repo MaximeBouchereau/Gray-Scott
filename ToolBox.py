@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider
+import os
 
 class Vector_Field:
     """Vector fields used in the project"""
@@ -98,7 +99,8 @@ class Operators:
 class Print_Solution:
     """Class for printing solution"""
 
-    def print_PDE_Solution_2D(self, V, h_params):
+    @staticmethod
+    def print_PDE_Solution_2D(V, h_params):
         """Prints 2D solution of PDE (V) w.r.t. time.
 
         Inputs
@@ -135,4 +137,78 @@ class Print_Solution:
         slider.on_changed(update)
 
         plt.show()
+        return None
+
+    @staticmethod
+    def print_Computed_Solution_2D(sol_path):
+        """Prints 2D solution of PDE (V) w.r.t. time after computation and save.
+
+        Inputs
+        - sol_path: Str - Path of PDE solution.
+        """
+
+        SOL = np.load(sol_path, allow_pickle=True)
+        V = SOL["solution"]
+        params = SOL["parameters"].item()  # souvent nécessaire si dict
+
+        fig, ax = plt.subplots()
+        plt.subplots_adjust(bottom=0.25)
+
+        im = ax.imshow(V[0], origin="lower",
+            extent=[0, 1 * params['Lx'], 0, params['Ly']],
+            vmin=np.min(V),
+            vmax=np.max(V),
+            cmap="jet")
+
+        # Colorbar
+        cbar = fig.colorbar(im, ax=ax)
+
+        ax.set_xlabel("x")
+        ax.set_ylabel("y")
+        ax.set_title("t = 0")
+
+        ax_slider = plt.axes([0.2, 0.1, 0.65, 0.03])
+        slider = Slider(ax_slider, "t", 0, V.shape[0] - 1, valinit=0, valstep=1)
+
+        def update(val):
+            n = int(slider.val)
+            t = str(np.round(n * params['T'] / params['N'], 2))
+            im.set_data(V[n])
+            ax.set_title(f"t = {t}")
+            fig.canvas.draw_idle()
+
+        slider.on_changed(update)
+
+        plt.show()
+        plt.close() # Closes the figure from memory
+        SOL.close() # Closes the solution from memory
+        return None
+
+    @staticmethod
+    def save_Computed_Solution_2D(sol_path, sampling = 50):
+        """Prints 2D solution of PDE (V) w.r.t. time after computation and save.
+
+        Inputs
+        - sol_path: Str - Path of PDE solution.
+        - sampling: Int - Sampling interval. For instance, if sampling = 50 and there are 10.000 frames, 200 frames are saved, 1 for 50. Default: 50.
+        """
+        SOL = np.load(sol_path, allow_pickle=True)
+        V = SOL["solution"]
+        params = SOL["parameters"].item()
+
+        N = params['N']
+        sol_file = os.path.dirname(sol_path)
+
+        SPL = sampling
+        for n in range(N // SPL + 1):
+            print(" > " + str(n + 1) + " / " + str(N // SPL + 1), end="\r")
+            plt.figure()
+            plt.imshow(V[int(n * SPL), : , :], cmap="jet", vmin=np.min(V), vmax=np.max(V))
+            plt.colorbar()
+            plt.title("t = " + str(np.round(SPL * n * params['T'] / params['N'], 2)))
+            plt.xlabel("x")
+            plt.ylabel("y")
+            plt.savefig(sol_file + "/PDE_" + str(int(SPL * n)) + ".png", dpi=300)
+            plt.close()
+
         return None
