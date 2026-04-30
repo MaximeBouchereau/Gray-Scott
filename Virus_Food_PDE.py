@@ -8,20 +8,20 @@ import ToolBox
 importlib.reload(ToolBox)
 
 # Hyperparameters
-params_0 = {'D_u':0.00002, 'D_v':0.00001, 'F':0.06, 'k':0.062, 'Lx':1, 'Ly':1, 'Jx':100, 'Jy':100, 'T':10000, 'N':10000, 'ID':"GN_0.30"} # Starter pack
+params_0 = {'D_u':0.00002, 'D_v':0.00001, 'F':0.06, 'k':0.062, 'Lx':1, 'Ly':1, 'Jx':100, 'Jy':100, 'T':10000, 'N':10000, 'ID':"GN_0.2"} # Starter pack
 params_1 = {'D_u':0.005, 'D_v':0.0025, 'F':0.035, 'k':0.065, 'Lx':50, 'Ly':50, 'Jx':200, 'Jy':200, 'T':10000, 'N':10000, 'ID':"GN_0.1"} # Mitosis Turing
 params_2 = {'D_u':0.01, 'D_v':0.005, 'F':0.06, 'k':0.062, 'Lx':50, 'Ly':50, 'Jx':200, 'Jy':200, 'T':10000, 'N':10000, 'ID':"CS"} # Maze Turing
 params_3 = {'D_u':0.005, 'D_v':0.0025, 'F':0.025, 'k':0.06, 'Lx':50, 'Ly':50, 'Jx':200, 'Jy':200, 'T':10000, 'N':10000, 'ID':"RS"} # Mitosis Turing
 params_4 = {'D_u':0.005, 'D_v':0.0025, 'F':0.06, 'k':0.062, 'Lx':50, 'Ly':50, 'Jx':200, 'Jy':200, 'T':10000, 'N':10000, 'ID':"RS"} # Maze Turing
 params_5 = {'D_u':0.005, 'D_v':0.0025, 'F':0.045, 'k':0.065, 'Lx':50, 'Ly':50, 'Jx':200, 'Jy':200, 'T':10000, 'N':10000, 'ID':"RS"} # Bacteria
 
-params = params_1
+params = params_2
 
 class Virus_Food_PDE:
     """Class for simulating Virus-Food-PDE."""
 
     @classmethod
-    def Integrate(cls, params):
+    def Integrate(cls, params, save = False):
         """Approximates solution of Virus-Food-PDE.
 
         Inputs:
@@ -41,12 +41,21 @@ class Virus_Food_PDE:
                 -> "RS": Random squares (10 small random squares in space)
                 -> "GN_" + str(sigma): Gaussian noise with specified scale. For instance, if sigma = 0.25, write "GN_0.25".
 
+        - save: boolean - If True, save the solution to disk. If False, plots the result [useful for numerical tests]. Default: False.
         Numerical integration scheme is Forward Euler with approximation of Laplace operator on the grid with finite differences, boundary conditions."""
 
         # Step sizes
         Delta_x = params['Lx'] / params['Jx']
         Delta_y = params['Ly'] / params['Jy']
         Delta_t = params['T'] / params['N']
+
+        # CFL numbers [stability conditions]
+        CFL_x_u = 4 * params['D_u'] * Delta_t / Delta_x ** 2
+        CFL_x_v = 4 * params['D_v'] * Delta_t / Delta_x ** 2
+        CFL_y_u = 4 * params['D_u'] * Delta_t / Delta_y ** 2
+        CFL_y_v = 4 * params['D_v'] * Delta_t / Delta_y ** 2
+
+        print(" > CFL Number:", max([CFL_x_u, CFL_x_v, CFL_y_u, CFL_y_v]))
 
         # Initialization
         U = np.zeros((params['N'] + 1, params['Jx'] + 1, params['Jy'] + 1))
@@ -64,7 +73,7 @@ class Virus_Food_PDE:
                 V[0, idx_x[j]:idx_x[j] + 10, idx_y[j]:idx_y[j] + 10] = 0.5
 
         for n in range(params['N']):
-            print("n = " + str(n+1) + " / " + str(params['N']), end="\r")
+            print(" > n = " + str(n+1) + " / " + str(params['N']), end="\r")
             U[n + 1, :, :] = U[n, :, :] + params['D_u'] * Delta_t * ToolBox.Operators().Laplace_operator(U[n, :, :], Delta_x, Delta_y) + Delta_t * ToolBox.Vector_Field(params['k'], params['F']).f_1(U[n, :, :], V[n, :, :])
             V[n + 1, :, :] = V[n, :, :] + params['D_v'] * Delta_t * ToolBox.Operators().Laplace_operator(V[n, :, :], Delta_x, Delta_y) + Delta_t * ToolBox.Vector_Field(params['k'], params['F']).f_2(U[n, :, :], V[n, :, :])
 
