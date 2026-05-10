@@ -2,6 +2,19 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider
 import os
+import psutil
+
+class Tools:
+    """Class for various tools."""
+
+    @classmethod
+    def OCC_RAM(self):
+        """Prints occupied RAM."""
+
+        process = psutil.Process(os.getpid())
+        ram = process.memory_info().rss / 1024 ** 3
+        print(" > Used RAM: " + format(ram, '.2f') + " GB", end="\r")
+        return None
 
 class Vector_Field:
     """Vector fields used in the project"""
@@ -80,7 +93,7 @@ class Matrix:
 class Operators:
     """Operators used in the project"""
 
-    def Laplace_operator(self, X, Delta_x, Delta_y):
+    def Laplace_operator(self, X, Delta_x, Delta_y, out=None):
         """Produces an array modelling 2D Laplace operator on rectangle with periodic conditions.
 
         Inputs:
@@ -203,7 +216,7 @@ class Print_Solution:
         for n in range(N // SPL + 1):
             print(" > " + str(n + 1) + " / " + str(N // SPL + 1), end="\r")
             plt.figure()
-            plt.imshow(V[int(n * SPL), : , :], cmap="jet", vmin=np.min(V), vmax=np.max(V))
+            plt.imshow(V[int(n * SPL), : , :], cmap="jet", vmin=np.min(V), vmax=np.max(V), extent=[0, params['Lx'], 0, params['Ly']])
             plt.colorbar()
             plt.title("t = " + str(np.round(SPL * n * params['T'] / params['N'], 2)))
             plt.xlabel("x")

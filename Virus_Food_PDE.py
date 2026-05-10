@@ -4,6 +4,7 @@ import importlib
 from scipy.sparse.linalg import spsolve
 from scipy.sparse import csr_matrix
 import os
+import psutil
 
 import ToolBox
 importlib.reload(ToolBox)
@@ -72,7 +73,9 @@ class Virus_Food_PDE:
                 V[0, idx_x[j]:idx_x[j] + 10, idx_y[j]:idx_y[j] + 10] = 0.5
 
         for n in range(params['N']):
-            print(" > n = " + str(n+1) + " / " + str(params['N']), end="\r")
+            process = psutil.Process(os.getpid())
+            ram = process.memory_info().rss / 1024 ** 3
+            print(" > n = " + str(n+1) + " / " + str(params['N']) + " - Used RAM: " + format(ram, '.2f') + " GB", end="\r")
             U[n + 1, :, :] = U[n, :, :] + params['D_u'] * Delta_t * ToolBox.Operators().Laplace_operator(U[n, :, :], Delta_x, Delta_y) + Delta_t * ToolBox.Vector_Field(params['k'], params['F']).f_1(U[n, :, :], V[n, :, :])
             V[n + 1, :, :] = V[n, :, :] + params['D_v'] * Delta_t * ToolBox.Operators().Laplace_operator(V[n, :, :], Delta_x, Delta_y) + Delta_t * ToolBox.Vector_Field(params['k'], params['F']).f_2(U[n, :, :], V[n, :, :])
 
@@ -96,5 +99,5 @@ class Virus_Food_PDE:
         if save == False:
             ToolBox.Print_Solution().print_PDE_Solution_2D(np.transpose(V, axes=(0, 2, 1)), params)
         # ToolBox.Print_Solution().print_PDE_Solution_2D(np.concatenate((np.transpose(U, axes=(0, 2, 1)), np.transpose(V, axes=(0, 2, 1))), axis=2), params)
-
+        del U, V
         return None
